@@ -24,3 +24,8 @@ This advanced tool brings you the best-ever, fully automated Audyssey calibratio
 ### [>> A1 Evo Calibration Tool](https://brnkr.github.io/audyssey_one)
 
 ### [>> Standard to Directional Bass Converter](https://brnkr.github.io/audyssey_one/ConvertStandard2Directional.html)
+
+
+# Disclaimer
+
+This source code is independently developed and is not affiliated with, nor has it been authorized, sponsored, or otherwise approved by Audyssey Laboratories, Inc. or its partners, including Denon and Marantz. The term 'Audyssey' is used here for descriptive purposes only to indicate the compatibility of this software with products from Denon and Marantz that utilize Audyssey's technology.
