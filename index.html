@@ -259,37 +259,37 @@
   <div class="customization-options">
     <small>    
       <label>
-        <input type="checkbox" id="forceSmall" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="forceSmall" onchange="updateCheckboxStates('forceSmall')">
         Force small fronts
         <span class="explanation">If selected, front speakers will NOT be set to 'Large / Full range.'</span>
       </label>
       <label>
-        <input type="checkbox" id="forceWeak" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="forceWeak" onchange="updateCheckboxStates('forceWeak')">
         Force weak receiver
         <span class="explanation">Select this option in systems with less powerful receivers and/or identical speakers, bed channels will be crossed over at 80Hz and Atmos channels at 120Hz.</span>
       </label>
       <label>
-        <input type="checkbox" id="forceCentre" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="forceCentre" onchange="updateCheckboxStates('forceCentre')">
         Align sub to centre speaker
         <span class="explanation">Subwoofer(s) will be time aligned to the 'Centre' speaker, front speakers will be set to 'Large', 'Subwoofer Mode' will need to be set to 'LFE' in the receiver.</span>
       </label>
       <label>
-        <input type="checkbox" id="forceLarge" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="forceLarge" onchange="updateCheckboxStates('forceLarge')">
         Force large fronts
         <span class="explanation">When selected, front speakers will NOT be set to 'Small'.</span>
       </label>
       <label>
-        <input type="checkbox" id="noInversion" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="noInversion" onchange="updateCheckboxStates('noInversion')">
         Avoid sub polarity inversion
         <span class="explanation">Avoids subwoofer polarity inversion checks in optimizations. Select this option if your sub(s) don't have a polarity/phase inversion flip switch.</span>
       </label>
       <label>
-        <input type="checkbox" id="limitLPF" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="limitLPF" onchange="updateCheckboxStates('limitLPF')">
         Cap subwoofer LPF frequency
         <span class="explanation">Limits lowpass filter evaluation frequencies for even number of sub(s) (odd number of sub(s) are automatically limited) to avoid bass localization in 'LFE + Main' mode.</span>
       </label>
       <label>
-        <input type="checkbox" id="forceMLP" onchange="updateCheckboxStates()">
+        <input type="checkbox" id="forceMLP" onchange="updateCheckboxStates('forceMLP')">
         Force 1st mic position @ MLP
         <span class="explanation">Only first microphone position measurements will be used in calculations rather than average of all measured mic positions. May yield better results in certain room conditions.</span>
       </label>
@@ -8883,14 +8883,14 @@ zip.file("_micCal.txt", micCal);
       document.querySelector('.notice').style.fontSize = '0.5em'; 
       optimizeOCA();
     }
-    function updateCheckboxStates() {
+    function updateCheckboxStates(triggeredBy) {
       const forceMLPCheckbox = document.getElementById('forceMLP');
+      const noInversionCheckbox = document.getElementById('noInversion');
+      const limitLPFCheckbox = document.getElementById('limitLPF');
       const forceSmallCheckbox = document.getElementById('forceSmall');
       const forceWeakCheckbox = document.getElementById('forceWeak');
       const forceCentreCheckbox = document.getElementById('forceCentre');
       const forceLargeCheckbox = document.getElementById('forceLarge');
-      const noInversionCheckbox = document.getElementById('noInversion');
-      const limitLPFCheckbox = document.getElementById('limitLPF');
       forceMLP = forceMLPCheckbox.checked;
       forceSmall = forceSmallCheckbox.checked;
       forceWeak = forceWeakCheckbox.checked;
@@ -8898,39 +8898,41 @@ zip.file("_micCal.txt", micCal);
       forceLarge = forceLargeCheckbox.checked;
       noInversion = noInversionCheckbox.checked;
       limitLPF = limitLPFCheckbox.checked;
-      forceSmallCheckbox.disabled = false;
-      forceWeakCheckbox.disabled = false;
-      forceCentreCheckbox.disabled = false;
-      forceLargeCheckbox.disabled = false;
-      if (forceSmallCheckbox.checked) {
-          forceWeakCheckbox.checked = false;
-          forceWeakCheckbox.disabled = true;
-          forceLargeCheckbox.checked = false;
-          forceLargeCheckbox.disabled = true;
-          forceCentreCheckbox.checked = false;
-          forceCentreCheckbox.disabled = true;
+      if (['forceSmall', 'forceWeak', 'forceCentre', 'forceLarge'].includes(triggeredBy)) {
+            forceSmallCheckbox.disabled = false;
+            forceWeakCheckbox.disabled = false;
+            forceCentreCheckbox.disabled = false;
+            forceLargeCheckbox.disabled = false;
+          }
+      if (triggeredBy === 'forceSmall' && forceSmall) {
+            forceWeakCheckbox.checked = false;
+            forceWeakCheckbox.disabled = true;
+            forceLargeCheckbox.checked = false;
+            forceLargeCheckbox.disabled = true;
+            forceCentreCheckbox.checked = false;
+            forceCentreCheckbox.disabled = true;
+          }
+      if (triggeredBy === 'forceWeak' && forceWeak) {
+            forceSmallCheckbox.checked = true;
+            forceSmallCheckbox.disabled = true;
+            forceLargeCheckbox.checked = false;
+            forceLargeCheckbox.disabled = true;
+            forceCentreCheckbox.checked = false;
+            forceCentreCheckbox.disabled = true;
       }
-      if (forceWeakCheckbox.checked) {
-          forceSmallCheckbox.checked = true;
-          forceSmallCheckbox.disabled = true;
-          forceLargeCheckbox.checked = false;
-          forceLargeCheckbox.disabled = true;
-          forceCentreCheckbox.checked = false;
-          forceCentreCheckbox.disabled = true;
+      if (triggeredBy === 'forceLarge' && forceLarge) {
+            forceSmallCheckbox.checked = false;
+            forceSmallCheckbox.disabled = true;
+            forceWeakCheckbox.checked = false;
+            forceWeakCheckbox.disabled = true;
       }
-      if (forceLargeCheckbox.checked) {
-          forceSmallCheckbox.checked = false;
-          forceSmallCheckbox.disabled = true;
-          forceWeakCheckbox.checked = false;
-          forceWeakCheckbox.disabled = true;
-      }
-      if (forceCentreCheckbox.checked) {
-          forceSmallCheckbox.checked = false;
-          forceSmallCheckbox.disabled = true;
-          forceWeakCheckbox.checked = false;
-          forceWeakCheckbox.disabled = true;
-          forceLargeCheckbox.checked = true;
-          forceLargeCheckbox.disabled = true;
+      if (triggeredBy === 'forceCentre' && forceCentre) {
+            forceSmallCheckbox.checked = false;
+            forceSmallCheckbox.disabled = true;
+            forceWeakCheckbox.checked = false;
+            forceWeakCheckbox.disabled = true;
+            forceLargeCheckbox.checked = true;
+            forceLargeCheckbox.disabled = true;
       }
     }
     async function optimizeOCA() {
@@ -9389,8 +9391,10 @@ zip.file("_micCal.txt", micCal);
         subLPF[i] ? rollSub = 120 : rollSub = 250
         rollSub === 120 ? console.warn(`SW${i + 1}: ${rollSub}Hz (not suitable for crossovers above 120Hz), set 'LPF for LFE' to 250Hz in the AVR for better LFE channel response!`) : console.log(`SW${i + 1}: ${rollSub}Hz`);
       };
-      console.log("Every subwoofer has a lowpass filter at either 120Hz or 250Hz. Evo copies that information from your Audyssey calibration file.");
-      console.log("If need be, this setting can be changed for each sub with 'isReversePolarity' property in the original .ady file in a json editor.");
+      console.log("All subs have a lowpass filter at either 120Hz or 250Hz. Evo copies that information directly from your Audyssey calibration file,");
+      console.log("Audyssey may get this value wrong. A sub output falling down beyond 120Hz should have isReversePolarity ticked (true) in the .ady file,");
+      console.log("For optimal results, check & compare imported measurements of your sub(s) in REW with Audyssey's own findings prompted above,");
+      console.log("If required, change incorrect 'channelReport/isReversePolarity' values in the original .ady file in a json editor and repeat A1 Evo.");
     }
     async function aceXO() {
       let subMoves = 0, inversion = false, lmDev = Infinity, lmXO, lmDelay = 0, lmInv = false, normDev = Infinity, normXO , normDelay = 0, normInv = false, frontLFE = Infinity, centerAligned = false;
@@ -10384,13 +10388,14 @@ zip.file("_micCal.txt", micCal);
       for (checkFreq = 20; checkFreq <= 250; checkFreq++) {
         const postAlignResult = await postAlign('Align IRs', checkFreq);
         if (postAlignResult.message === 'Delay too large' && previousDelay != postAlignResult.delay) {
-          console.infoUpdate(`Required delay @${checkFreq}Hz is outside limits: ${postAlignResult.delay}ms`);
+          console.infoUpdate(`Required delay @${checkFreq}Hz is outside limits: ${-postAlignResult.delay}ms`);
           previousDelay = postAlignResult.delay;
           continue;
         }
-        if (noInversion) {
-          isInverted = await fetchAlign('invert-b');
-          if (isInverted) {continue;}
+        isInverted = await fetchAlign('invert-b');
+        if (noInversion && isInverted) {
+          isPossible = false;
+          continue;
         };
         const delayB = await fetchAlign('delay-b');
         requiredDelay = -parseFloat(delayB);
@@ -10448,13 +10453,14 @@ zip.file("_micCal.txt", micCal);
         magSum = 0;
         const postAlignResult = await postAlign('Align IRs', checkFreq);
         if (postAlignResult.message === 'Delay too large' && previousDelay != postAlignResult.delay) {
-          console.infoUpdate(`Required delay @${checkFreq}Hz is outside limits: ${postAlignResult.delay}ms`);
+          console.infoUpdate(`Required delay @${checkFreq}Hz is outside limits: ${-postAlignResult.delay}ms`);
           previousDelay = postAlignResult.delay;
           continue;
         }
-        if (noInversion) {
-          isInverted = await fetchAlign('invert-b');
-          if (isInverted) {continue;}
+        isInverted = await fetchAlign('invert-b');
+        if (noInversion && isInverted) {
+          isPossibleI = false;
+          continue;
         };
         isPossibleI = true;
         const tempSum = await fetchAlign('aligned-frequency-response');
@@ -10477,7 +10483,6 @@ zip.file("_micCal.txt", micCal);
           const sumMagnitude = data.getFloat32(k * 4);
           magSum += sumMagnitude;
         }
-        isInverted = await fetchAlign('invert-b');
         if (magSum > maxSum) {
           maxSum = magSum;
           bestFreq = checkFreq;
@@ -31887,10 +31892,7 @@ zip.file("_micCal.txt", micCal);
               const errorMessage = parsedMessage.results[0].Error;
               const delayMatch = errorMessage.match(/delay required to align the responses.*(-?[\d.]+) ms/);
               if (delayMatch) {
-                  return { message: 'Delay too large', error: errorMessage, delay: parseFloat(delayMatch[1]) };
-              }
-              if (delayMatch) {
-                return {message: 'Delay too large', error: errorMessage, delay: parseFloat(delayMatch[1])};
+                return { message: 'Delay too large', error: errorMessage, delay: parseFloat(delayMatch[1]) };
               }
             }
           }
@@ -31911,7 +31913,7 @@ zip.file("_micCal.txt", micCal);
           const resultData = await resultResponse.json();
           if (resultData.results && resultData.results[0] && resultData.results[0].Error) {
             const errorMessage = resultData.results[0].Error;
-            const delayMatch = errorMessage.match(/delay required to align the responses .+ is too large, (-?[\d.]+) ms/);
+            const delayMatch = errorMessage.match(/delay required to align the responses.*(-?[\d.]+) ms/);
             if (delayMatch) {
               return { message: 'Delay too large', error: errorMessage, delay: parseFloat(delayMatch[1]) };
             }
