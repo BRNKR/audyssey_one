@@ -12,7 +12,6 @@ Effortlessly integrate the power of REW into your home audio setup, gaining a co
 
 - [Requirements](#requirements)
 - [Video Description](#video-description)
-  - [A1 Evo Nexus home cinema optimization tool](#a1-evo-nexus-home-cinema-optimization-tool)
 - [Tutorial](#tutorial)
   - [Prepare VLC Player](#prepare-vlc-player)
   - [Setting up your hardware for measurements](#setting-up-your-hardware-for-measurements)
@@ -42,12 +41,15 @@ Effortlessly integrate the power of REW into your home audio setup, gaining a co
 - MultEQ Editor App ([iOS](https://apps.apple.com/de/app/audyssey-multeq-editor-app/id1210584625)/[Android](https://play.google.com/store/apps/details?id=com.dmholdings.AudysseyMultEq&hl=de&pli=1)) (sold separately)
 - [Room EQ Wizard (v5.40 Beta)](https://www.avnirvana.com/threads/rew-api-beta-releases.12981/)
 - [VLC Player](https://videolan.org)
+- Audio files
+  - [Timing reference file](https://brnkr.github.io/audyssey_one/LosslessAtmosREWSweeps/256kMeasSweep_0_to_24000_0_dBFS_48k_Float_L_refR.wav)
+  - [Atmos sweep files](https://brnkr.github.io/audyssey_one/LosslessAtmosREWSweeps/atmos_sweeps.m3u)
 
 ## Video Description
 
 (Click on Images to go to YouTube-Video)
 
-### A1 Evo Nexus home cinema optimization tool
+### A1 Evo Nexus home cinema optimization tool<!-- omit from toc -->
 
 | Part I - The Basics                                                                                           | Part II - REW                                                                                              |
 | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
