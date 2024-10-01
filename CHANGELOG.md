@@ -1,5 +1,14 @@
 # Audyssey One
 
+## Release Notes (30/09/2024) - A1 Evo Nexus
+
+### Patch 1.1
+
+- An object/array typo was causing problems with some AV Receivers
+- Although did not seem to cause problems with anyone, perfect response data was in string format rather than floats
+- If extended EQ frequency was manipulated in the script to above 250Hz, smoothing the measurement  didn't start from the correct frequency
+- Fixed trademark flowing over the log container probelm on 1080p screens
+
 ## Release Notes (08/08/2024) - A1 Evo Maestro MJ
 
 - Requires REW Beta 48 or above.
