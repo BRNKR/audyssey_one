@@ -1,8 +1,36 @@
 # Audyssey One
 
-## Release Notes (30/09/2024) - A1 Evo Nexus
+## Release Notes - A1 Evo Nexus
 
-### Patch 1.1
+### Patch 1.5 - 02 Oct 2024
+
+- Fixed an issue with the calculation of subwoofer natural bass roll off frequency.
+- Minor UI improvements and bug fixes of bug fixes.
+
+### Patch v1.4 - 02 Oct 2024
+
+- Fixed an issue where standard mode calibration ady file didn’t activate all present
+subwoofers for REW measurement in the new models with 4 sub outputs.
+- Minor UI improvements
+
+### Patch v1.3 - 02 Oct 2024
+
+- Fixed an issue where selecting an optimization option avoided conversion of
+directional bass mode to standard bass mode.
+- Resolved a problem where the calculated subwoofer volume could exceed AVR limits
+in extreme cases.
+- Corrected the error handling so that the "Unable to detect REW measurements" error
+does not appear when other measurement matching errors are present.
+- Slowed down Nexus slightly, as a few users reported unexplained errors with their
+particular REW setups.
+
+### Patch v1.2 - 02 Oct 2024
+
+- Fixed an issue where "REW Measurement mode .ady" files (both DEQ on and off
+versions) were setting the subwoofer low-pass filter to 120 Hz instead of 250 Hz,
+preventing the measurement of the subwoofer(s)' maximum response range.
+
+### Patch v1.1 - 01 Oct 2024
 
 - An object/array typo was causing problems with some AV Receivers
 - Although did not seem to cause problems with anyone, perfect response data was in string format rather than floats

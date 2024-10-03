@@ -42,7 +42,7 @@ Effortlessly integrate the power of REW into your home audio setup, gaining a co
 - [Room EQ Wizard (v5.40 Beta)](https://www.avnirvana.com/threads/rew-api-beta-releases.12981/)
 - [VLC Player](https://videolan.org)
 - Audio files
-  - [Timing reference file](https://brnkr.github.io/audyssey_one/LosslessAtmosREWSweeps/256kMeasSweep_0_to_24000_0_dBFS_48k_Float_L_refR.wav)
+  - [Timing reference file](https://brnkr.github.io/audyssey_one/LosslessAtmosREWSweeps/256kMeasurementSweepReferenceFile_0_to_24000_0_dBFS_48k_acoustic_ref_FL.wav)
   - [Atmos sweep files](https://brnkr.github.io/audyssey_one/LosslessAtmosREWSweeps/atmos_sweeps.m3u)
 
 ## Video Description
@@ -268,7 +268,7 @@ We will position the microphone at the center between the front left and right s
 ### Playing Atmos sweeps
 
 1. Click on ```Measure->From file->Folder symbol```.
-   1. Select ```256kMeasSweep_0_to_24000_0_dBFS_48k_Float_L_refR.wav```.
+   1. Select ```256kMeasurementSweepReferenceFile_0_to_24000_0_dBFS_48k_acoustic_ref_FL.wav```.
 2. Check ```capture noise floor```.
 3. Check that your ```Input``` calibration file is the selected for your microphone.
 4. Click on ```Start```.

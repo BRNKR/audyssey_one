@@ -335,7 +335,7 @@
 </head>
 <body>
 <div class="container">
-  <h2>A1 Evo <strong>1-click</strong> Optimization tool for home cinema systems with Audyssey®<span class="version-number">Nexus 1.1</span></h2>
+  <h2>A1 Evo <strong>1-click</strong> Optimization tool for home cinema systems with Audyssey®<span class="version-number">Nexus 1.5</span></h2>
   <h3>Step-by-Step Instructions:</h3>
   <ol>
     <li class="smaller-font">You will need to have Room EQ Wizard (v5.40 Beta) installed on your computer
@@ -470,7 +470,7 @@
       "AV7704", "AV7705", "NR1608", "NR1609", "SR5012", "SR5013", "SR6012", "SR6013", "SR7011", "SR7012", "SR7013", "SR8012"];
     
     /////////////////////////// Customization parameters for enthusiasts //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    let endFrequency = 282;// End frequency for amplitude correction filters
+    let endFrequency = 282;// End frequency for amplitude correction filters (max. 1000Hz)
     const maxBoost = 0;// Maximum boost per filter (dB), note: maxBoost is mainly effective if overallMaxBoostdB is adjusted, introducing higher auto-leveling compensation
     ///////////////////////// For optimal sound quality, OCA recommends to maintain the default values above! ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     let forceSmall = false;// If 'true', front speakers will NOT be set to 'Large / Full range'
@@ -511,22 +511,22 @@
     //Individual speaker distance values have no significance as long as the distance DIFFERENCES between speakers remain unchanged. FL will be assigned that distance in the absence of speaker C.
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    const baseUrl = 'http://localhost:4735/measurements', speedDelay = 127;
-    let adyContents, jsonData, fileName, sOs, isCirrusLogic, hasxo180, cDist, nSpeakers, subLO, subHI, multisubDelay, noDistance = false;
+    const baseUrl = 'http://localhost:4735/measurements', speedDelay = 255;
+    let jsonData, fileName, sOs, isCirrusLogic, hasxo180, cDist, nSpeakers, subLO, subHI, noDistance = false;
     let mSec = [], customLevel = {}, customDistance = {}, customCrossover = {}, commandId = {}, delayAdjustment = {}, freqIndex = [], freqLength;
     let maxNegative, maxPositive, targetCurvePath, targetLevel, targetArray = [], lfePlusMain = false, bassExtractionLPF = null, solution = false;
     let bassMode = "Standard", numSub = 1, subLPF = [null, null, null, null], swChannelCount = 0;
-    let msecMin, msecMax, invertSub = [], msecMinSub = Infinity, msecMaxSub = -Infinity, previousDelay = null, isPaused = false;
+    let msecMin, msecMax, invertSub = [], msecMinSub = Infinity, msecMaxSub = -Infinity, previousDelay = null, isPaused = false, dontStart = true;
 
     function extractAdy(event) {
-      console.info("Initialising A1 Evo Nexus 1.1...");
+      console.info("Initialising A1 Evo Nexus 1.5 ...");
       updateCheckboxStates();
       const file = event.target.files[0];
       fileName = file.name;
       console.info(`Audyssey calibration '${fileName}' has been uploaded!`)
       const reader = new FileReader();
       reader.onload = async function (e) {
-        adyContents = e.target.result;
+        let adyContents = e.target.result;
         jsonData = JSON.parse(adyContents);
         let modelName = jsonData.targetModelName;
         const model = modelName.slice(-6);
@@ -553,13 +553,54 @@
         jsonData.lfc = false;
         jsonData.dynamicEq = false;
         jsonData.enTargetCurveType = 1;
-        const totalChannels = jsonData.detectedChannels.length;
-        const subwooferChannels = jsonData.detectedChannels.filter(ch => ch.commandId.startsWith("SW"));
+        let subwooferTypeStart = 54;
+        let subwooferCounter = 0;
+        const subwooferChannels = jsonData.detectedChannels.filter(channel => channel.commandId.startsWith("SW"));
         numSub = subwooferChannels.length;
         jsonData.detectedChannels.forEach((channel, index) => {
           const isSubwoofer = channel.commandId.startsWith("SW");
           const isFirstSubwoofer = isSubwoofer && index === jsonData.detectedChannels.indexOf(subwooferChannels[0]);
-          if (!isSubwoofer || isFirstSubwoofer) {
+          if (isSubwoofer) {
+            channel.enChannelType = subwooferTypeStart + subwooferCounter;
+            subwooferCounter++;
+            channel.midrangeCompensation = true;
+            channel.frequencyRangeRolloff = 250;
+            channel.customLevel = "0.0";
+            channel.customDistance = 0.0;
+            channel.channelReport.customEnSpeakerConnect = 3;
+            channel.channelReport.distance = 0;
+            channel.channelReport.isReversePolarity = true;
+            channel.trimAdjustment = "0.0";
+            channel.delayAdjustment = "0.0";
+            if ('customCrossover' in channel) { delete channel.customCrossover; }
+            if ('customSpeakerType' in channel) { delete channel.customSpeakerType; }
+
+            if (isFirstSubwoofer) {
+              channel.customTargetCurvePoints = [];
+              const responseData = channel.responseData;
+              const keysToKeep = Object.keys(responseData).slice(0, 3);
+              keysToKeep.forEach(key => {
+                responseData[key] = isCirrusLogic ? antiMicCal : zerosArray;
+              });
+              Object.keys(responseData).forEach(key => {
+                if (!keysToKeep.includes(key)) {
+                  delete responseData[key];
+                }
+              });
+            } else {
+              if ('customTargetCurvePoints' in channel) { delete channel.customTargetCurvePoints; }
+              channel.responseData = {};
+            }
+          } else {
+            channel.customTargetCurvePoints = [];
+            channel.midrangeCompensation = false;
+            channel.frequencyRangeRolloff = 20000;
+            channel.customLevel = "0.0";
+            channel.customDistance = 0.0;
+            channel.customCrossover = "F";
+            channel.customSpeakerType = "L";
+            channel.channelReport.customEnSpeakerConnect = 2;
+            channel.channelReport.distance = 0;
             channel.customTargetCurvePoints = [];
             const responseData = channel.responseData;
             const keysToKeep = Object.keys(responseData).slice(0, 3);
@@ -571,41 +612,15 @@
                 delete responseData[key];
               }
             });
-          } else if (isSubwoofer && !isFirstSubwoofer) {
-              if ('customTargetCurvePoints' in channel) {delete channel.customTargetCurvePoints;}
-              channel.responseData = {};
-            }
-          if (!isSubwoofer) {
-            channel.customTargetCurvePoints = [];
-            channel.midrangeCompensation = false;
-            channel.frequencyRangeRolloff = 20000;
-            channel.customLevel = "0.0";
-            channel.customDistance = 0.0;
-            channel.customCrossover = "F";
-            channel.customSpeakerType = "L";
-            channel.channelReport.customEnSpeakerConnect = 2;
-            channel.channelReport.distance = 0;
+
           }
-          if (isSubwoofer) {
-            channel.midrangeCompensation = true;
-            channel.frequencyRangeRolloff = 250;
-            channel.customLevel = "0.0";
-            channel.customDistance = 0.0;
-            channel.channelReport.customEnSpeakerConnect = 3;
-            channel.channelReport.distance = 0;
-            channel.channelReport.isReversePolarity = false;
-            channel.trimAdjustment = "0.0";
-            channel.delayAdjustment = "0.0";
-            if ('customCrossover' in channel) {delete channel.customCrossover;}
-            if ('customSpeakerType' in channel) {delete channel.customSpeakerType;}
-          }
-        });       
+        });
         (async function() {
               try {
                 document.getElementById('saveButton').disabled = false;
                 document.getElementById('saveDEQButton').disabled = false;
                 await compareREW();
-                document.getElementById('startButton').disabled = false;
+                if (!dontStart) {document.getElementById('startButton').disabled = false}
               } catch (error) {
                 console.error("An error occurred:", error);
               }
@@ -686,7 +701,7 @@
             console.warn("No measurements found in REW.");
             return; // Exit the function if no measurements are found.
         }
-
+        dontStart = false;
         console.info("Comparing REW measurements with the uploaded calibration file...")
         let measurementArray = Object.keys(measurements).map(key => ({
             index: parseInt(key),
@@ -718,21 +733,24 @@
           console.info("All speaker checks passed. Proceeding with subwoofer(s) check...");
         } else {
             console.error("Measurements in REW did NOT match with the speakers in the uploaded calibration file!");
-            throw new Error(`Please upload a suitable .ady file or load/replace REW measurements and restart the script.`);
+            throw new Error(`UnmatchedSpeakers: Please upload a suitable .ady file or load/replace REW measurements and restart the script.`);
         }
         nSpeakers = rewNonSWMeasurements.length + 1;
         let firstSWChannel = jsonData.detectedChannels.find(ch => ch.commandId.startsWith("SW"));
         if (!firstSWChannel) {
             console.error("No Subwoofer channel was found in the calibration file, optimization cannot proceed!");
-            throw new Error(`Evo can only optimize systems with a subwoofer.`);
+            throw new Error(`NoSubwooferError: Evo can only optimize systems with a subwoofer.`);
         }
         if (rewSWMeasurements.length !== jsonSWMeasurements.length) {
             console.warn(`Mismatch in the number of subwoofers between REW (${rewSWMeasurements.length}) and the uploaded .ady file (${jsonSWMeasurements.length}).`);
+            if (rewSWMeasurements.length === 0) {
+              throw new Error(`SubwooferError: You have NO subwoofer measurements in REW. Please check and restart the script!`);
+            }
             console.warn("Overriding calibration file subwoofer structure based on the number of subwoofer measurements in REW!");
             if (`subwooferNum` in jsonData) {jsonData.subwooferNum = rewSWMeasurements.length}
             let multeqType = parseInt(jsonData.enMultEQType);
             if (rewSWMeasurements.length > 1 && multeqType < 2) {
-              throw new Error("You have more than one subwoofer measurement in REW and this is not compatible with your AV Receiver. Please check and restart the script!");
+              throw new Error(`SubwooferError: You have more than one subwoofer measurement in REW and this is not compatible with your AV Receiver. Please check and restart the script!`);
             }
             jsonData.detectedChannels = jsonData.detectedChannels.filter(ch => !ch.commandId.startsWith("SW") || ch === firstSWChannel);
             if (multeqType > 1) {firstSWChannel.enChannelType = 54}
@@ -756,13 +774,22 @@
       document.getElementById('button1').disabled = true;
 
       } catch (error) {
-          console.warn("Unable to detect REW measurements!");
+          if (error.message.startsWith("UnmatchedSpeakers")) {
+                console.error(error.message.replace("UnmatchedSpeakers: ", ""));
+            } else if (error.message.startsWith("NoSubwooferError")) {
+                console.error(error.message.replace("NoSubwooferError: ", ""));
+            } else if (error.message.startsWith("SubwooferError")) {
+                console.error(error.message.replace("SubwooferError: ", ""));
+            } else {
+                console.warn("Unable to detect REW!");
+                dontStart = true;
+            }
           return; // Gracefully exit if there was an error fetching the measurements.
       }     
     }
     async function saveBaseJson() {
       jsonData.dynamicEq = false;
-      adyContents = JSON.stringify(jsonData, null, 2);
+      let adyContents = JSON.stringify(jsonData, null, 2);
       const blob = new Blob([adyContents], { type: 'application/json' });
       const urlBlob = URL.createObjectURL(blob);
       const downloadLink = document.createElement("a");
@@ -774,7 +801,7 @@
     }
     async function saveDeqBaseJson() {
       jsonData.dynamicEq = true;
-      adyContents = JSON.stringify(jsonData, null, 2);
+      let adyContents = JSON.stringify(jsonData, null, 2);
       const blob = new Blob([adyContents], { type: 'application/json' });
       const urlBlob = URL.createObjectURL(blob);
       const downloadLink = document.createElement("a");
@@ -1110,7 +1137,7 @@
       await postDelete(rmsID);
       targetLevel -= bestDeduction;
       console.log(`New target level optimized for minimum total speaker volume deviation: ${targetLevel.toFixed(2)}dB`);
-      console.infoUpdate("Executing precision temporal alignment across the speaker array for optimal coherence...");
+      console.infoUpdate("Performing precision temporal alignment across the speaker array for optimal coherence...");
       const oIndices = Array.from({ length: nSpeakers + numSub - 1 }, (_, j) => j + 1);
       await epAlign(oIndices, true);
       measurements = await fetch_mREW();
@@ -1131,7 +1158,7 @@
       if (numSub > 1) {
         console.warn("Your system will now be converted to 'standard bass' mode for a better sound experience...");
         await tectonic();
-        console.warn("Conversion from 'directional bass' mode to 'standard bass' mode completed.")
+        console.warn("Time and volume aLignment of subwoofers between each other in 'standard bass' mode completed.")
       } else {
         maxNegative = (msecMin - mSec[nSpeakers]) * 1000;
         maxPositive = 0;
@@ -1154,7 +1181,11 @@
       }
       if (numSub === 1) {customLevel[nSpeakers] = 0;}
       const subOffset = await rmsVolume(nSpeakers);
-      for (i = nSpeakers; i < (nSpeakers + numSub); i++) {customLevel[i] += subOffset;}
+      for (i = nSpeakers; i < (nSpeakers + numSub); i++) {
+        customLevel[i] += subOffset;
+        if (customLevel[i] < -12) {console.warn(`SW${i - nSpeakers + 1} volume is too high and can only be decreased by -12dB (hardware limit). Optimization will not be optimal!`); customLevel[i] = -12;};
+        if (customLevel[i] > 12) {console.warn(`SW${i - nSpeakers + 1} volume is too low and can only be increased by +12dB (hardware limit). Optimization will not be optimal!`); customLevel[i] = 12;};
+      }
     }
     async function generateFilters() {
       console.info(`Generating proprietary room correction filters based on Hilbert transforms of the impulse responses...`);
@@ -1466,7 +1497,7 @@
       for (i = 1; i <= nSpeakers + numSub - 1; i++) {
         customDistance[i] = cDist + (mSec[i] - mSec[1]) * sOs;
         if (distMinSub < 0) {
-          customDistance[i] += Math.abs(distMinSub) + multisubDelay;
+          customDistance[i] += Math.abs(distMinSub);
         }
         customDistance[i] = Math.round(parseFloat(customDistance[i]) * 100) / 100;
         if (i >= nSpeakers) {
@@ -2225,7 +2256,7 @@
       const magnitudeArray = [];
       const spResponse = await fetchSafe('frequency-response?smoothing=1%2F48&ppo=96', noM);
       startFreq = spResponse.startFreq;
-      k1 = 15.75, k2 = 250;
+      let k1 = 25, k2 = 250;
       ppo = spResponse.ppo;
       k1 = Math.round(Math.log2(k1 / startFreq) * ppo);
       k2 = Math.round(Math.log2(k2 / startFreq) * ppo);
@@ -2241,9 +2272,9 @@
         sum = 0;
         const lpfArray = [];
         const lpfResponse = await fetchSafe('frequency-response?smoothing=1%2F48&ppo=96', i);
-        startFreq = spResponse.startFreq;
-        k1 = 15.75; k2 = 250;
-        ppo = spResponse.ppo;
+        startFreq = lpfResponse.startFreq;
+        k1 = 25; k2 = 250;
+        ppo = lpfResponse.ppo;
         k1 = Math.round(Math.log2(k1 / startFreq) * ppo);
         k2 = Math.round(Math.log2(k2 / startFreq) * ppo);
         const bytesLPF = Uint8Array.from(atob(lpfResponse.magnitude), c => c.charCodeAt(0));
@@ -2267,7 +2298,6 @@
       if (lpfCalculated === 120) {isRP = true}
       await postDelete(mCount + 2);
       await postDelete(mCount + 1);
-      //console.log(`Subwoofer's natural LPF is @ ${lpfCalculated}Hz.`)
       return isRP;
     }
     async function rmsError(noM) {
@@ -2520,7 +2550,7 @@
       await new Promise((resolve) => setTimeout(resolve, speedDelay));
     }
     async function updateAdy() {
-      console.info(`Calculating Audyssey auto-leveling compensations and uploading optimization settings into the 'master' calibration file...`);
+      console.info(`Calculating Audyssey auto-leveling compensations and uploading optimized settings into the final calibration file...`);
       let refTarget = [ 11.246,
                           11.246,
                           11.246,
@@ -4741,7 +4771,6 @@
         if (customCrossover[i] === "L") {continue;};
         if (customCrossover[i] > 90) {customCrossover[i] /= 10;} 
       }
-      const jsonData = JSON.parse(adyContents);
       const freqArray = [];
       const sfreqArray = [];
       let iFreq = 0.3662109375;
@@ -4750,6 +4779,7 @@
         freqArray.push(iFreq);
         iFreq *= octX;
       }
+      let extraNeeded;
       for (i = 1; i < nSpeakers; i++) {
         const fltArray = [];
         const fltResponse = await fetchSafe('frequency-response?smoothing=1%2F48&ppo=96', 2 * i + (nSpeakers + 1));
@@ -4766,11 +4796,11 @@
         spSum = Math.round(spSum * 2) / 2;
         customLevel[i] += spSum;
         if (customLevel[i] < -12) {
-            let extraNeeded = -(customLevel[i] + 12);
+            extraNeeded = -(customLevel[i] + 12);
             customLevel[i] = -12;
             console.warn(`Speaker ${commandId[i]} volume is maxed out at -12dB, an additional ${extraNeeded.toFixed(1)}dB would be needed for full Audyssey auto-leveling compensation!`);
         } else {
-            console.info = `Applied ${spSum.toFixed(1)}dB extra volume adjustment to speaker ${commandId[i]} to compensate for Audyssey auto-leveling.`;
+            console.info(`Applied ${spSum.toFixed(1)}dB extra volume adjustment to speaker ${commandId[i]} to compensate for Audyssey auto-leveling.`);
         }
         const customTargetCurvePoints = fltArray.map(point => `{${point[0]}, ${point[1]}}`);
         const thisChannel = jsonData.detectedChannels.find(channel => channel.commandId === commandId[i]);
@@ -4815,7 +4845,7 @@
               customLevel[i] = -12;
               console.warn(`Subwoofer ${channel.commandId} volume is maxed out at -12dB, an additional ${extraNeeded.toFixed(1)}dB would be needed for full Audyssey auto-leveling compensation!`);
           } else {
-              console.info = `Applied ${spSum.toFixed(1)}dB extra adjustment to speaker ${channel.commandId} to compensate for Audyssey auto-leveling.`;
+              console.info(`Applied ${spSum.toFixed(1)}dB extra adjustment to speaker ${channel.commandId} to compensate for Audyssey auto-leveling.`);
           }
           channel.customLevel = customLevelValue.toFixed(1);
           if (numSub > 1) { k++ };
@@ -4833,7 +4863,7 @@
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const timestamp = `${year}${month}${day}_${hours}${minutes}`;
-      downloadLink.download = `manualREW_${timestamp}_A1Evo_Nexus_1_1.ady`;
+      downloadLink.download = `manualREW_${timestamp}_A1Evo_Nexus_1_5.ady`;
       downloadLink.style.display = "none";
       document.body.appendChild(downloadLink);
       downloadLink.click();
